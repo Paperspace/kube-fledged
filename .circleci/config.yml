@@ -5,7 +5,7 @@ orbs:
   helm-tools: paperspace/helm-tools@0.0.12
 
 _workspace_root: &workspace_root .
-_chart_name: &chart_name kube-fledged
+_chart_name: &chart_name kubefledged
 _ssh_key_fingerprint: &ssh_key_fingerprint a7:64:43:0c:16:ad:61:cf:78:2f:df:30:0d:9a:2a:15
 _setup_steps: &setup_steps
   - run: helm lint deploy/kubefledged-operator/helm-charts/kubefledged
