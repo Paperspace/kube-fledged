@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "kubefledged.fullname" . }}-controller
+  name: {{ include "kubefledged.fullname" . }}-webhook-server
   labels:
     {{- include "kubefledged.labels" . | nindent 4 }}
   namespace: {{ .Values.kubefledgedNameSpace }}
 spec:
-  replicas: {{ .Values.controllerReplicaCount }}
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "kubefledged.selectorLabels" . | nindent 6 }}-controller
+      {{- include "kubefledged.selectorLabels" . | nindent 6 }}-webhook-server
   template:
     metadata:
       labels:
-        {{- include "kubefledged.selectorLabels" . | nindent 8 }}-controller
+        {{- include "kubefledged.selectorLabels" . | nindent 8 }}-webhook-server
     spec:
     {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -26,14 +26,13 @@ spec:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: {{ .Values.image.kubefledgedControllerRepository }}:{{ .Chart.AppVersion }}
-          command: {{ .Values.command.kubefledgedControllerCommand }}
+          image: {{ .Values.image.kubefledgedWebhookServerRepository }}:{{ .Chart.AppVersion }}
+          command: {{ .Values.command.kubefledgedWebhookServerCommand }}
           args:
-            - "--stderrthreshold={{ .Values.args.controllerLogLevel }}"
-            - "--image-pull-deadline-duration={{ .Values.args.controllerImagePullDeadlineDuration }}"
-            - "--image-cache-refresh-frequency={{ .Values.args.controllerImageCacheRefreshFrequency }}"
-            - "--cri-client-image={{ .Values.image.kubefledgedCRIClientRepository }}:{{ .Chart.AppVersion }}"
-            - "--image-pull-policy={{ .Values.args.controllerImagePullPolicy }}"
+            - "--stderrthreshold={{ .Values.args.webhookServerLogLevel }}"
+            - "--cert-file={{ .Values.args.webhookServerCertFile }}"
+            - "--key-file={{ .Values.args.webhookServerKeyFile }}"
+            - "--port={{ .Values.args.webhookServerPort }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
             - name: KUBEFLEDGED_NAMESPACE
@@ -42,10 +41,14 @@ spec:
                   fieldPath: metadata.namespace
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-      initContainers:
-        - name: init-webhook
-          image: busybox:1.28.4
-          command: ['sh', '-c', "until wget -O- https://kubefledged-webhook-server.default.svc:{{ .Values.webhookService.port }}/validate-image-cache?timeout=1s; do echo waiting for kubefledged-webhook-server; sleep 2; done"]
+          volumeMounts:
+          - name: secret-volume
+            mountPath: "/var/run/secrets/webhook-server"
+            readOnly: true
+      volumes:
+      - name: secret-volume
+        secret:
+          secretName: kubefledged-webhook-server              
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

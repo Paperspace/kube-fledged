@@ -42,10 +42,6 @@ spec:
                   fieldPath: metadata.namespace
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-      initContainers:
-        - name: init-webhook
-          image: busybox:1.28.4
-          command: ['sh', '-c', "until wget -O- https://kubefledged-webhook-server.default.svc:{{ .Values.webhookService.port }}/validate-image-cache?timeout=1s; do echo waiting for kubefledged-webhook-server; sleep 2; done"]
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

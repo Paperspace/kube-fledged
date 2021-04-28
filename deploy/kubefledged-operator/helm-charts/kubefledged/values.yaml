@@ -4,7 +4,7 @@
 
 controllerReplicaCount: 1
 webhookServerReplicaCount: 1
-kubefledgedNameSpace: default
+kubefledgedNameSpace: kube-fledged
 image:
   kubefledgedControllerRepository: docker.io/senthilrch/kubefledged-controller
   kubefledgedCRIClientRepository: docker.io/senthilrch/kubefledged-cri-client
@@ -26,11 +26,6 @@ validatingWebhookCABundle:
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
-
-images:
-  # worker:
-  #   images:
-  #   nodeSelector:
 
 serviceAccount:
   # Specifies whether a service account should be created
