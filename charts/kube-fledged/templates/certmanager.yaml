@@ -1,0 +1,57 @@
+{{- if .Values.certManager.enabled -}}
+{{- if not .Values.certManager.issuerRef -}}
+# Create a selfsigned Issuer, in order to create a root CA certificate for
+# signing webhook serving certificates
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ template "kubefledged.fullname" . }}-self-signed-issuer
+  namespace: default
+spec:
+  selfSigned: {}
+---
+# Generate a CA Certificate used to sign certificates for the webhook
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ template "kubefledged.fullname" . }}-root-cert
+  namespace: default
+spec:
+  secretName: {{ template "kubefledged.fullname" . }}-root-cert
+  duration: 43800h0m0s # 5y
+  issuerRef:
+    name: {{ template "kubefledged.fullname" . }}-self-signed-issuer
+  commonName: "ca.webhook.kubefledged"
+  isCA: true
+---
+# Create an Issuer that uses the above generated CA certificate to issue certs
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ template "kubefledged.fullname" . }}-root-issuer
+  namespace: default
+spec:
+  ca:
+    secretName: {{ template "kubefledged.fullname" . }}-root-cert
+{{- end }}
+---
+# generate a serving certificate for the apiservices to use
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ template "kubefledged.fullname" . }}-admission
+  namespace: default
+spec:
+  secretName: {{ template "kubefledged.fullname" . }}-admission
+  duration: 8760h0m0s # 1y
+  issuerRef:
+    {{- if .Values.certManager.issuerRef }}
+    {{- toYaml .Values.certManager.issuerRef | nindent 4 }}
+    {{- else }}
+    name: {{ template "kubefledged.fullname" . }}-root-issuer
+    {{- end }}
+  dnsNames:
+  - {{ template "kubefledged.fullname" . }}
+  - {{ template "kubefledged.fullname" . }}.default
+  - {{ template "kubefledged.fullname" . }}.default.svc
+{{- end -}}
