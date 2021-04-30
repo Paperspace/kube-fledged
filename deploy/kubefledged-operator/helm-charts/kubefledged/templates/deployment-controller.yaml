@@ -2,9 +2,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "kubefledged.fullname" . }}-controller
+  namespace: {{ include "kubefledged.namespace" . }}
   labels:
     {{- include "kubefledged.labels" . | nindent 4 }}
-  namespace: {{ .Values.kubefledgedNameSpace }}
 spec:
   replicas: {{ .Values.controllerReplicaCount }}
   selector:
