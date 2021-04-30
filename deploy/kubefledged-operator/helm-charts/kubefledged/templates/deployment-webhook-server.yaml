@@ -2,9 +2,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "kubefledged.fullname" . }}-webhook-server
+  namespace: {{ include "kubefledged.namespace" . }}
   labels:
     {{- include "kubefledged.labels" . | nindent 4 }}
-  namespace: {{ .Values.kubefledgedNameSpace }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
@@ -30,8 +30,8 @@ spec:
           command: {{ .Values.command.kubefledgedWebhookServerCommand }}
           args:
             - "--stderrthreshold={{ .Values.args.webhookServerLogLevel }}"
-            - "--cert-file={{ .Values.args.webhookServerCertFile }}"
-            - "--key-file={{ .Values.args.webhookServerKeyFile }}"
+            - "--cert-file={{ if .Values.certManager.enabled }}/cert/tls.crt{{ else }}{{ .Values.args.webhookServerCertFile }}{{ end }}"
+            - "--key-file={{ if .Values.certManager.enabled }}/cert/tls.key{{ else }}{{ .Values.args.webhookServerKeyFile }}{{ end }}"
             - "--port={{ .Values.args.webhookServerPort }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
@@ -42,13 +42,17 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
-          - name: secret-volume
-            mountPath: "/var/run/secrets/webhook-server"
+          - name: tls-secret
+            mountPath: {{if .Values.certManager.enabled }}"/cert"{{else}}"/var/run/secrets/webhook-server"{{end}}
             readOnly: true
       volumes:
-      - name: secret-volume
+      - name: tls-secret
         secret:
-          secretName: kubefledged-webhook-server              
+          {{- if .Values.certManager.enabled }}
+          secretName: {{ template "kubefledged.fullname" . }}-admission
+          {{- else }}
+          secretName: "kubefledged-webhook-server"
+          {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

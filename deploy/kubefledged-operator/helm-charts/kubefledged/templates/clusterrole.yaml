@@ -16,7 +16,7 @@ rules:
       - get
       - list
       - watch
-      - update      
+      - update
   - apiGroups:
       - "kubefledged.k8s.io"
     resources:
@@ -57,5 +57,5 @@ rules:
     verbs:
       - list
       - watch
-      - get    
+      - get
 {{- end -}}

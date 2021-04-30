@@ -3,6 +3,10 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   name: {{ include "kubefledged.validatingWebhookName" . }}
+{{- if and .Values.certManager.enabled (not .Values.validatingWebhookCABundle) }}
+  annotations:
+    cert-manager.io/inject-ca-from: {{ printf "%s/%s-root-cert" (include "kubefledged.namespace" .) (include "kubefledged.fullname" .) | quote }}
+{{- end }}
 webhooks:
   - name: validate-image-cache.kubefledged.k8s.io
     admissionReviewVersions: ["v1beta1", "v1"]
@@ -11,11 +15,13 @@ webhooks:
     sideEffects: None
     clientConfig:
       service:
-        namespace: {{ .Values.kubefledgedNameSpace }}
-        name: kubefledged-webhook-server
+        namespace: {{ include "kubefledged.namespace" . }}
+        name: {{ include "kubefledged.fullname" . }}
         path: "/validate-image-cache"
         port: {{ .Values.webhookService.port }}
+      {{- if and .Values.validatingWebhookCABundle (not .Values.certManager.enabled) }}
       caBundle: {{ .Values.validatingWebhookCABundle }}
+      {{- end }}
     rules:
       - operations: ["CREATE", "UPDATE"]
         apiGroups: ["kubefledged.k8s.io"]

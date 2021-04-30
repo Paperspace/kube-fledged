@@ -4,13 +4,12 @@
 
 controllerReplicaCount: 1
 webhookServerReplicaCount: 1
-kubefledgedNameSpace: kube-fledged
 image:
   kubefledgedControllerRepository: docker.io/senthilrch/kubefledged-controller
   kubefledgedCRIClientRepository: docker.io/senthilrch/kubefledged-cri-client
   kubefledgedWebhookServerRepository: docker.io/senthilrch/kubefledged-webhook-server
   pullPolicy: Always
-command: 
+command:
   kubefledgedControllerCommand: ["/opt/bin/kubefledged-controller"]
   kubefledgedWebhookServerCommand: ["/opt/bin/kubefledged-webhook-server"]
 args:
@@ -22,10 +21,17 @@ args:
   webhookServerCertFile: /var/run/secrets/webhook-server/cert.pem
   webhookServerKeyFile: /var/run/secrets/webhook-server/key.pem
   webhookServerPort: 443
+
 validatingWebhookCABundle:
+
+certManager:
+  enabled: true
+  issuerRef:
+
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
+namspaceOverride: ""
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -58,10 +64,12 @@ validatingWebhook:
 secret:
   name:
 
-podSecurityContext: {}
+podSecurityContext:
+  {}
   # fsGroup: 2000
 
-securityContext: {}
+securityContext:
+  {}
   # capabilities:
   #   drop:
   #   - ALL
@@ -82,7 +90,8 @@ webhookService:
 
 ingress:
   enabled: false
-  annotations: {}
+  annotations:
+    {}
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
   hosts:
@@ -93,7 +102,8 @@ ingress:
   #    hosts:
   #      - chart-example.local
 
-resources: {}
+resources:
+  {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
   # resources, such as Minikube. If you do want to specify resources, uncomment the following
